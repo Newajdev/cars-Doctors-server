@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 require('dotenv').config()
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
@@ -32,6 +33,17 @@ async function run() {
     const database = client.db("CarsDoctor");
     const serviceCollection = database.collection("CarsServices");
 
+    // auth related API
+    app.post('/jwt', async (req, res)=>{
+      const user= req.body;
+      console.log(user);
+
+      const Token = jwt.sign(user, process.env.ACCESS_TOKEN, {expiresIn: '1h'})
+      res.send(Token)
+    })
+    // auth related API
+
+
     app.get('/services', async (req, res) => {
       const cursor = serviceCollection.find()
       const result = await cursor.toArray()
@@ -57,25 +69,23 @@ async function run() {
     // ---------------------------------------------------------------------------------------------------------------------
     // ---------------------------------------------------------------------------------------------------------------------
     const BookingCollection = client.db("CarsDoctor").collection("Bookings");
-    app.get('/bookings', async (req, res) => {
-      const cursor = BookingCollection.find()
-      const result = await cursor.toArray()
-      res.send(result);
-    })
-    app.get('/bookings/:email', async (req, res) => {
-      const email = req.params.email;
-      const query = { email: email }
-      const result = await BookingCollection.find(query).toArray()
-
+      app.get ('/bookings', async (req, res) =>{
+      let query = {};
+      if (req.query?.email){
+        query = {email: req.query.email}
+      }
+      const result = await BookingCollection.find(query).toArray();
       res.send(result)
       
     })
 
+    
+
     app.post('/bookings', async (req, res) => {
       const result = await BookingCollection.insertOne(req.body)
-
       res.send(result)
     })
+
     app.delete('/bookings/:id', async(req, res)=>{
       const id = req.params.id;
       const query = {_id: new ObjectId(id)}
